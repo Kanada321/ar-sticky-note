@@ -21,3 +21,4 @@ yarn-error.log
 /storage/logs
 /storage/framework
 ar-sticky.iml
+.pint.cache
