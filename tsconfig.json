@@ -1,0 +1,26 @@
+{
+    "compilerOptions": {
+        "module": "ESNext",
+        "target": "ESNext",
+        "lib": ["dom", "es6", "es2017", "esnext.asynciterable"],
+        "allowJs": true,
+        "skipLibCheck": true,
+        "esModuleInterop": true,
+        "allowSyntheticDefaultImports": true,
+        "strict": true,
+        "forceConsistentCasingInFileNames": true,
+        "moduleResolution": "node",
+        "resolveJsonModule": true,
+        "isolatedModules": true,
+        "noEmit": true,
+        "jsx": "react-jsx", // ここで JSX モードを指定
+        "baseUrl": ".",
+        "paths": {
+            "@/*": ["resources/ts/*"]
+        }
+    },
+    "include": [
+        "resources/ts/**/*.ts",
+        "resources/ts/**/*.tsx" // tsx ファイルも含める
+    ]
+}
