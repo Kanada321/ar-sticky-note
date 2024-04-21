@@ -3,7 +3,10 @@
 /public/build
 /public/hot
 /public/storage
+/public/.DS_Store
 /storage/*.key
+/storage/DS_Store
+/Storage/*.key
 /vendor
 .env
 .env.backup
@@ -20,4 +23,5 @@ yarn-error.log
 /storage/debugbar
 /storage/logs
 /storage/framework
-ar-sticky.iml
+/*.iml
+.pint.cache
