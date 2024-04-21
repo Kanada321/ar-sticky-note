@@ -11,11 +11,9 @@ const authUserQuery = () => ({
 export const useAuthUser = async () => {
     const query = authUserQuery()
 
-    const user = queryClient.getQueryData(query.queryKey)
+    return  queryClient.getQueryData(query.queryKey)
         ?? (await queryClient.fetchQuery(query).catch(() => undefined))
-    console.log("Auth User Data:", user);
 
-    return user
 }
 
 
