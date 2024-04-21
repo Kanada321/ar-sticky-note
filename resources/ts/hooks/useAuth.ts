@@ -4,15 +4,18 @@ import { useQueryClient, useMutation , useQuery } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
 
 const authUserQuery = () => ({
-    queryKey: ['user'],
+    queryKey: ['auth'],
     queryFn: api.getUser
 })
 
 export const useAuthUser = async () => {
     const query = authUserQuery()
 
-    return queryClient.getQueryData(query.queryKey)
+    const user = queryClient.getQueryData(query.queryKey)
         ?? (await queryClient.fetchQuery(query).catch(() => undefined))
+    console.log("Auth User Data:", user);
+
+    return user
 }
 
 
@@ -27,7 +30,7 @@ export const useLogin = () => {
         onSuccess: (data) => {
             console.log(data);
             queryClient.invalidateQueries({ queryKey: ['auth'] });
-            window.location.href = '/';
+            window.location.href = '/user';
         }
     });
 }
@@ -43,7 +46,7 @@ export const useLogout = () => {
         onSuccess: (data) => {
             console.log(data);
             queryClient.invalidateQueries({ queryKey: ['auth'] });
-            window.location.href = '/login';
+            window.location.href = '/';
         }
     });
 }

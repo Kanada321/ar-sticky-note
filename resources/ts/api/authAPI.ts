@@ -18,8 +18,6 @@ export const login = async (credentials: { email: string, password: string }): P
 export const getUser = async (): Promise<User> => {
     await initializeAuth(); // CSRFトークンを取得
     const response = await axios.get<User>('/api/me');
-    console.log('------');
-    console.log(response.data);
     return response.data;
 };
 

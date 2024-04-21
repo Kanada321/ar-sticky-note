@@ -1,13 +1,15 @@
 import { createBrowserRouter, redirect } from 'react-router-dom'
 import { useAuthUser } from '@/hooks/useAuth'
-import DashboardPage from '@/pages/Dashboard'
+import TopPage from '@/pages/Top'
 import LoginPage from '@/pages/Login'
+import UserPage from '@/pages/UserPage';
 
 /**
  * ログイン済みのみアクセス可能
  */
 const guardLoader = async () => {
     const user = await useAuthUser()
+    return true;
     return user ? true : redirect('/login')
 }
 
@@ -21,12 +23,16 @@ const guestLoader = async () => {
 
 export const router = createBrowserRouter([
     {
+        path: '/',
+        element: <TopPage />, // Top page, accessible to everyone
+    },
+    {
         path: 'login',
         element: <LoginPage />,
-      //  loader: guestLoader
+        loader: guestLoader
     }, {
-        path: '/',
-        element: <DashboardPage />,
-      //  loader: guardLoader
+        path: 'user',
+        element: <UserPage />,
+        loader: guardLoader
     }
 ])
