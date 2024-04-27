@@ -27,7 +27,7 @@ export const useLogin = () => {
         onSuccess: (data) => {
             console.log(data);
             queryClient.invalidateQueries({ queryKey: ['auth'] });
-            window.location.href = '/';
+            window.location.href = '/dashboard';
         }
     });
 }
