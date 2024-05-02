@@ -3,6 +3,7 @@ import { useAuthUser } from '@/hooks/useAuth'
 import TopPage from '@/pages/Top'
 import DashboardPage from '@/pages/Dashboard'
 import LoginPage from '@/pages/Login'
+import ThreeDObjectPage from '@/pages/3DObjectPage'
 
 /**
  * ログイン済みのみアクセス可能
@@ -29,9 +30,14 @@ export const router = createBrowserRouter([
         path: '/login',
         element: <LoginPage />,
         loader: guestLoader
-    }, {
+    },
+    {
         path: '/dashboard',
         element: <DashboardPage />,
         loader: guardLoader
+    },
+    {
+        path: '/3d-object',
+        element: <ThreeDObjectPage />,
     }
 ])
