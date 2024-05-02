@@ -1,7 +1,9 @@
 import { createBrowserRouter, redirect } from 'react-router-dom'
 import { useAuthUser } from '@/hooks/useAuth'
+import TopPage from '@/pages/Top'
 import DashboardPage from '@/pages/Dashboard'
 import LoginPage from '@/pages/Login'
+import ThreeDObjectPage from '@/pages/3DObjectPage'
 
 /**
  * ログイン済みのみアクセス可能
@@ -21,12 +23,21 @@ const guestLoader = async () => {
 
 export const router = createBrowserRouter([
     {
-        path: 'login',
-        element: <LoginPage />,
-      //  loader: guestLoader
-    }, {
         path: '/',
+        element: <TopPage />,
+    },
+    {
+        path: '/login',
+        element: <LoginPage />,
+        loader: guestLoader
+    },
+    {
+        path: '/dashboard',
         element: <DashboardPage />,
-      //  loader: guardLoader
+        loader: guardLoader
+    },
+    {
+        path: '/3d-object',
+        element: <ThreeDObjectPage />,
     }
 ])
