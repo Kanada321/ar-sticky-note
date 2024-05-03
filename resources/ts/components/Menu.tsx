@@ -26,7 +26,13 @@ const Menu: React.FC = () => {
                         <StyledLink to="/">TOP</StyledLink>
                     </ListItemWrapper>
                     <ListItemWrapper>
-                        <StyledLink to="/3d-object">3D Object</StyledLink>
+                        <StyledLink to="/ar-experience/1">AR 1</StyledLink>
+                    </ListItemWrapper>
+                    <ListItemWrapper>
+                        <StyledLink to="/ar-experience/2">AR 2</StyledLink>
+                    </ListItemWrapper>
+                    <ListItemWrapper>
+                        <StyledLink to="/ar-experience/3">AR 3</StyledLink>
                     </ListItemWrapper>
                     {user !== null && (
                         <>
