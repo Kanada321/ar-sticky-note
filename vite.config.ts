@@ -24,5 +24,5 @@ export default defineConfig({
             usePolling: true,
         },
     },
-    assetsInclude: ['**/*.dat', '**/*.patt'],
+    assetsInclude: ['**/*.dat', '**/*.patt', '**/*.gltf','**/*.glb'],
 });

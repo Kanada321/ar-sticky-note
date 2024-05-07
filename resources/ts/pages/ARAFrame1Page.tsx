@@ -1,17 +1,32 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import 'aframe';
-import 'aframe-ar';
 
 const ARAFrame1Page: React.FC = () => {
+    useEffect(() => {
+        // ウィンドウのサイズ変更に対応するためのイベントリスナーを設定
+        function handleResize() {
+            const scene = document.querySelector('a-scene');
+            if (scene) {
+                scene.style.height = `${window.innerHeight}px`;
+                scene.style.width = `${window.innerWidth}px`;
+            }
+        }
+
+        window.addEventListener('resize', handleResize);
+        handleResize(); // 初期ロード時にもサイズを設定
+
+        return () => {
+            window.removeEventListener('resize', handleResize);
+        };
+    }, []);
+
     return (
-        <a-scene embedded={true} arjs='sourceType: webcam;'>
-            {/* マーカーの定義 */}
-            <a-marker preset="custom" type='pattern' url='../assets/marker.patt'>
-                {/* 赤い立方体の表示 */}
-                <a-scene embedded={true} arjs='sourceType: webcam;'>
-            </a-marker>
-            {/* カメラの設定 */}
-            <a-entity camera></a-entity>
+        <a-scene vr-mode-ui="enabled: true">
+            <a-box position="-1 0.5 -3" rotation="0 45 0" color="#4CC3D9"></a-box>
+            <a-sphere position="0 1.25 -5" radius="1.25" color="#EF2D5E"></a-sphere>
+            <a-cylinder position="1 0.75 -3" radius="0.5" height="1.5" color="#FFC65D"></a-cylinder>
+            <a-plane position="0 0 -4" rotation="-90 0 0" width="4" height="4" color="#7BC8A4"></a-plane>
+            <a-sky color="#ECECEC"></a-sky>
         </a-scene>
     );
 };
