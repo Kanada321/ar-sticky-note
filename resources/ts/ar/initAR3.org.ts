@@ -39,38 +39,11 @@ export const initAR3 = () => {
 
     // メッシュ（3Dオブジェクト）の設定
     const box = new THREE.Mesh(
-        new THREE.BoxGeometry(5, 5, 1), // 立方体ジオメトリの設定
-        new THREE.MeshStandardMaterial({ color: 0xffcffc}) // 灰色のマテリアル設定
+        new THREE.BoxGeometry(2, 2, 2), // 立方体ジオメトリの設定
+        new THREE.MeshStandardMaterial({ color: 0x95BCDF }) // 灰色のマテリアル設定
     );
-
     box.position.set(0, 2, 0); // メッシュの位置設定
-   // scene.add(box); // シーンにメッシュを追加
-
-    // 2. HTML要素からCanvasを作成してスタイルを指定
-    const canvas = document.createElement('canvas');
-    canvas.width = 100;
-    canvas.height = 50;
-    const ctx = canvas.getContext('2d');
-    ctx.fillStyle = 'rgba(224, 255, 255, 0.5)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = 'black';
-    ctx.font = '16px Arial';
-    ctx.fillText('Hello, AR!', 10, 30);
-
-
-// 3. Canvasをテクスチャとしてマテリアルに適用
-    const texture = new THREE.CanvasTexture(canvas);
-    const material = new THREE.MeshBasicMaterial({ map: texture });
-
-
-// 4. テキスト付きのオブジェクトをシーンに追加
-    const textMesh = new THREE.Mesh(
-        new THREE.PlaneGeometry(3, 3),
-        material
-    );
-    textMesh.position.set(1, 1, 1); // オブジェクトの位置を設定
-    scene.add(textMesh);
-    textMesh.rotation.set(-Math.PI/2, 0, 0);
+    scene.add(box); // シーンにメッシュを追加
 
     // ARツールキットの設定
     const { arToolkitContext, arToolkitSource ,arDispose} = useARToolkit({
