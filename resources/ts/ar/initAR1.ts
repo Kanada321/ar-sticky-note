@@ -85,20 +85,28 @@ export const initAR1 = () => {
 };
 
 function setupLighting(scene) {
-    const light = new THREE.DirectionalLight(0xffffff, 1);
-    light.position.set(2.4, 2, 5);
-    scene.add(light);
-    scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1);
+    scene.add(ambientLight);//環境光の設定
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5);
+    directionalLight.position.set(0, 1, 1); // 上からの光
+    scene.add(directionalLight);
+    const pointLight = new THREE.PointLight(0xffffff, 5, 100);
+    pointLight.position.set(10, 10, 10); // シーンの端から光を投げる
+    scene.add(pointLight);
 }
 
 function createBox() {
     const geometry = new THREE.BoxGeometry(0.7, 0.7, 0.7);
-    const material = new THREE.MeshStandardMaterial({ color: 0xC0E0E0, transparent: true, opacity: 1 });
+    const material = new THREE.MeshStandardMaterial({
+        color: 0xa59595,
+        transparent: true,
+        opacity: 1,
+    });
     return new THREE.Mesh(geometry, material);
 }
 
 function createSphere() {
-    const geometry = new THREE.SphereGeometry(0.2, 32, 32);
+    const geometry = new THREE.SphereGeometry(0.15, 32, 32);
     const material = new THREE.MeshStandardMaterial({ color: 0xFF5733, transparent: true, opacity: 0.7 });
     return new THREE.Mesh(geometry, material);
 }
