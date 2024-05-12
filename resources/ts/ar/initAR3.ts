@@ -1,112 +1,104 @@
 import * as THREE from "three";
+import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
+import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js';
+import TWEEN from '@tweenjs/tween.js';
 import cameraPara from "@/assets/camera_para.dat";
-import markerURL from "@/assets/marker.patt";
+import markerURL from "@/assets/pattern-AR.patt";
 import { useARToolkit } from "@/useARToolkit";
 
 export const initAR3 = () => {
-    // サイズを取得
     const width = window.innerWidth;
     const height = window.innerHeight;
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setClearColor(new THREE.Color("lightgrey"), 0);
+    renderer.setSize(width, height);
+    renderer.domElement.style.cssText = "position:absolute; top:0; left:0; z-index:10;";
+    document.body.appendChild(renderer.domElement);
 
-    // WebGLレンダラーの設定
-    const renderer = new THREE.WebGLRenderer({
-        antialias: true, // エッジの滑らか化を有効化
-        alpha: true, // キャンバスにアルファ（透明度）バッファを使用する
-    });
-    renderer.setClearColor(new THREE.Color("lightgrey"), 0); // 背景色と透明度の設定
-    renderer.setSize(width, height); // レンダラーのサイズ設定
-    renderer.domElement.style.position = "absolute"; // DOM上でのレンダラーの位置設定
-    renderer.domElement.style.top = "0px"; // 上端からの位置
-    renderer.domElement.style.left = "0px"; // 左端からの位置
-    renderer.domElement.style.zIndex = '10';
-    document.body.appendChild(renderer.domElement); // DOMにレンダラーを追加
-
-    // シーンの設定
     const scene = new THREE.Scene();
 
-    // カメラの設定
-    const camera = new THREE.PerspectiveCamera(60, width / height, 0.01, 20); // 透視投影カメラの設定
-    camera.position.set(1, 1.5, 1.5); // カメラの位置設定
-    camera.lookAt(new THREE.Vector3(0, 0.5, 0)); // カメラの注視点設定
-    scene.add(camera); // シーンにカメラを追加
+    // カメラを作成
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    // カメラの位置を原点から少し離れた場所に設定
+    camera.position.set(0, 0, 5);
+    // カメラが原点を見るように設定
+    camera.lookAt(new THREE.Vector3(0, 0, 0));
+    scene.add(camera);
 
-    // 照明の設定
-    const light = new THREE.DirectionalLight(0xffffff, 1); // 白色の指向性ライトを作成
-    light.position.set(2.4, 2, 5); // ライトの位置設定
-    scene.add(light); // シーンにライトを追加
+    setupLighting(scene);
 
-    // メッシュ（3Dオブジェクト）の設定
-    const box = new THREE.Mesh(
-        new THREE.BoxGeometry(1, 1, 1), // 立方体ジオメトリの設定
-        new THREE.MeshStandardMaterial({ color: 0xe5e5e5 }) // 灰色のマテリアル設定
-    );
-    box.position.set(0, 0.5, 0); // メッシュの位置設定
-    scene.add(box); // シーンにメッシュを追加
-
-    // ARツールキットの設定
-    const { arToolkitContext, arToolkitSource ,arDispose} = useARToolkit({
-        camera: camera, // AR用カメラ
-        cameraParaDatURL: cameraPara, // カメラパラメータファイル
-        domElement: renderer.domElement, // DOM要素
-        markerPatternURL: markerURL, // マーカーURL
-        scene, // シーン
-    });
-
-    // アニメーションループの設定
-    function animate() {
-        requestAnimationFrame(animate); // 次のフレームを要求
-
-        if (arToolkitSource.ready) {
-            // ゆっくりと各軸に回転を追加
-            box.rotation.x += 0.01;
-            box.rotation.y += 0.01;
-            box.rotation.z += 0.01;
-
-            arToolkitContext.update(arToolkitSource.domElement); // ARコンテキストの更新
-            renderer.render(scene, camera); // シーンとカメラを使ってレンダリング
-            scene.visible = camera.visible; // シーンの可視状態をカメラの可視状態に同期
-        }
+    function setupLighting(scene) {
+        const ambientLight = new THREE.AmbientLight(0xffffff, 2);
+        scene.add(ambientLight);//環境光の設定
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 2.0);
+        directionalLight.position.set(0, 1, 0); // 上からの光
+        scene.add(directionalLight);
+        const pointLight = new THREE.PointLight(0xffffff, 3, 100);
+        pointLight.position.set(10, 10, 10); // シーンの端から光を投げる
+        scene.add(pointLight);
     }
 
-    animate(); // アニメーションの開始
-
-    // イベントリスナーの設定（マーカー発見時のイベント）
-    window.addEventListener("markerFound", (e) => {
-        console.log("marker found!", e); // マーカー発見時にコンソールにログを出力
+    const { arToolkitContext, arToolkitSource, arDispose } = useARToolkit({
+        camera, cameraParaDatURL: cameraPara, domElement: renderer.domElement, markerPatternURL: markerURL, scene
     });
 
-    // クリーンアップ関数の設定
+
+    // オブジェクトを作成
+    const geometry = new THREE.BoxGeometry();
+    const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+    const cube = new THREE.Mesh(geometry, material);
+    scene.add(cube);
+
+// クリックイベントを検出する
+    document.addEventListener('click', (event: MouseEvent) => {
+        // クリック位置の座標を取得
+        const mouse = new THREE.Vector2();
+        mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+        // レイキャスターを作成
+        const raycaster = new THREE.Raycaster();
+        raycaster.setFromCamera(mouse, camera);
+
+        // オブジェクトとの交差を検出
+        const intersects = raycaster.intersectObjects(scene.children, true);
+
+        // タップされたオブジェクトがある場合
+        if (intersects.length > 0) {
+            // そのオブジェクトを消す
+            const object = intersects[0].object as THREE.Object3D;
+            scene.remove(object);
+        }
+    });
+
+
+    const animate = () => {
+        requestAnimationFrame(animate);
+        if (arToolkitSource.ready) {
+            console.log('-----------');
+            arToolkitContext.update(arToolkitSource.domElement);
+            renderer.render(scene, camera);
+            scene.visible = camera.visible;
+        }
+    };
+    animate();
+
     return () => {
-        // シーン内のすべてのオブジェクトを削除してクリーンアップ
-        scene.traverse((object) => {
+        // window.removeEventListener('touchstart', onTouchStart);
+        scene.traverse(object => {
             if (object instanceof THREE.Mesh) {
-                const mesh = object as THREE.Mesh;
-                if (mesh.geometry) {
-                    mesh.geometry.dispose();
+                if (object.geometry) {
+                    object.geometry.dispose();
                 }
-                if (mesh.material instanceof THREE.Material) {
-                    const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-                    materials.forEach(material => {
-                        if ((material as THREE.Material).map) {
-                            (material as THREE.Material).map.dispose();
-                        }
-                        material.dispose();
-                    });
+                if (object.material instanceof THREE.Material) {
+                    object.material.dispose();
                 }
             }
         });
-
-
-        renderer.dispose(); // レンダラーのリソースを解放
-        // カメラのリソースがあれば解放
-        arDispose();
-
-        // レンダラーのDOM要素がまだドキュメントに存在するか確認してから削除
+        renderer.dispose();
         if (renderer.domElement && document.body.contains(renderer.domElement)) {
             document.body.removeChild(renderer.domElement);
         }
-
-        window.removeEventListener("markerFound", () => {}); // イベントリスナーを削除
+        arDispose();
     };
-
 };

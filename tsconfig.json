@@ -17,10 +17,12 @@
         "baseUrl": ".",
         "paths": {
             "@/*": ["resources/ts/*"]
-        }
+        },
+        "noImplicitAny": false // 型管理の緩和。明示的な型がない場合に any として扱われ、エラーが発生しなくなります
     },
     "include": [
         "resources/ts/**/*.ts",
         "resources/ts/**/*.tsx" // tsx ファイルも含める
-    ]
+    ],
+    "sourceMap": true
 }

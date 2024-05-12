@@ -4,6 +4,7 @@ import TopPage from '@/pages/Top'
 import DashboardPage from '@/pages/Dashboard'
 import LoginPage from '@/pages/Login'
 import ARExperiencePage from '@/pages/ARExperiencePage'
+import ARAFrame1Page from '@/pages/ARAFrame1Page'
 
 interface Params {
     arId: string;  // 'arId' パラメータが string 型であることを明示
@@ -45,5 +46,9 @@ export const router = createBrowserRouter([
     {
         path: '/ar-experience/:arId',
         element: <ARExperiencePage />
+    },
+    {
+        path: '/a-frame-1',
+        element: <ARAFrame1Page />
     }
 ])

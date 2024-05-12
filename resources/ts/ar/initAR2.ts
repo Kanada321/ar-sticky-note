@@ -1,107 +1,133 @@
 import * as THREE from "three";
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import cameraPara from "@/assets/camera_para.dat";
-import markerURL from "@/assets/marker.patt";
+import markerURL from "@/assets/pattern-AR.patt";
 import { useARToolkit } from "@/useARToolkit";
+import TWEEN from '@tweenjs/tween.js';
 
 export const initAR2 = () => {
-    // サイズを取得
     const width = window.innerWidth;
     const height = window.innerHeight;
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setClearColor(new THREE.Color("lightgrey"), 0);
+    renderer.setSize(width, height);
+    document.body.appendChild(renderer.domElement);
 
-    // WebGLレンダラーの設定
-    const renderer = new THREE.WebGLRenderer({
-        antialias: true, // エッジの滑らか化を有効化
-        alpha: true, // キャンバスにアルファ（透明度）バッファを使用する
-    });
-    renderer.setClearColor(new THREE.Color("lightgrey"), 0); // 背景色と透明度の設定
-    renderer.setSize(width, height); // レンダラーのサイズ設定
-    renderer.domElement.style.position = "absolute"; // DOM上でのレンダラーの位置設定
-    renderer.domElement.style.top = "0px"; // 上端からの位置
-    renderer.domElement.style.left = "0px"; // 左端からの位置
-    renderer.domElement.style.zIndex = '10';
-    document.body.appendChild(renderer.domElement); // DOMにレンダラーを追加
-
-    // シーンの設定
     const scene = new THREE.Scene();
-
-    // カメラの設定
-    const camera = new THREE.PerspectiveCamera(60, width / height, 0.01, 20); // 透視投影カメラの設定
-    camera.position.set(1, 1.5, 1.5); // カメラの位置設定
-    camera.lookAt(new THREE.Vector3(0, 0.5, 0)); // カメラの注視点設定
-    scene.add(camera); // シーンにカメラを追加
+    const camera = new THREE.PerspectiveCamera(60, width / height, 0.01, 20);
+    camera.position.set(1, 1.5, 1.5);
+    scene.add(camera);
 
     // 照明の設定
-    const light = new THREE.DirectionalLight(0xffffff, 1); // 白色の指向性ライトを作成
-    light.position.set(2.4, 2, 5); // ライトの位置設定
-    scene.add(light); // シーンにライトを追加
+    const light = new THREE.DirectionalLight(0xffffff, 2);
+    light.position.set(2.4, 2, 5);
 
-    // メッシュ（3Dオブジェクト）の設定
-    const box = new THREE.Mesh(
-        new THREE.BoxGeometry(2, 2, 2), // 立方体ジオメトリの設定
-        new THREE.MeshStandardMaterial({ color: 0x95BCDF }) // 灰色のマテリアル設定
-    );
-    box.position.set(0, 2, 0); // メッシュの位置設定
-    scene.add(box); // シーンにメッシュを追加
+    //環境光の設定
+    const ambientLight = new THREE.AmbientLight(0xffffff, 2.0);  // 強度を1.0に設定
+    scene.add(ambientLight);
 
-    // ARツールキットの設定
-    const { arToolkitContext, arToolkitSource ,arDispose} = useARToolkit({
-        camera: camera, // AR用カメラ
-        cameraParaDatURL: cameraPara, // カメラパラメータファイル
-        domElement: renderer.domElement, // DOM要素
-        markerPatternURL: markerURL, // マーカーURL
-        scene, // シーン
+    //追加の照明:
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.position.set(0, 1, 0); // 上からの光
+    scene.add(directionalLight);
+
+    const pointLight = new THREE.PointLight(0xffffff, 3, 100);
+    pointLight.position.set(10, 10, 10); // シーンの端から光を投げる
+    scene.add(pointLight);
+
+    const {arToolkitContext, arToolkitSource, arDispose} = useARToolkit({
+        camera, cameraParaDatURL: cameraPara, domElement: renderer.domElement, markerPatternURL: markerURL, scene
     });
 
-    // アニメーションループの設定
-    function animate() {
-        requestAnimationFrame(animate); // 次のフレームを要求
 
+
+
+    const loader = new GLTFLoader();
+    const clock = new THREE.Clock();
+    let mixer: THREE.AnimationMixer | undefined;
+
+    function orbitAnimation(object: THREE.Object3D, radius: number, speed: number) {
+        let angle = 0;
+        const increase = speed * 0.05;  // Increase per frame
+
+        new TWEEN.Tween({theta: 0})
+            .to({theta: 2 * Math.PI}, 5000)
+            .onUpdate((obj) => {
+                angle += increase;
+                object.position.x = radius * Math.cos(obj.theta);
+                object.position.z = radius * Math.sin(obj.theta);
+            })
+            .repeat(Infinity)
+            .start();
+    }
+
+    loader.load("/assets/3dmodels/Butterfly/Butterfly.gltf", function (gltf) {
+        gltf.scene.scale.set(12, 12, 12);
+        scene.add(gltf.scene);
+        mixer = new THREE.AnimationMixer(gltf.scene);
+
+        const flyAnimation = gltf.animations.find(clip => clip.name === "Fly_Loop_Animation");
+        if (flyAnimation) {
+            const action = mixer.clipAction(flyAnimation);
+            action.clampWhenFinished = true;
+            action.loop = THREE.LoopRepeat;
+            action.play();
+
+            // 上昇アニメーション後に円軌道アニメーションを開始
+            new TWEEN.Tween(gltf.scene.position)
+                .to({ y: "+0.1" }, 1000)
+                .easing(TWEEN.Easing.Quadratic.Out)
+                .onComplete(() => {
+                    orbitAnimation(gltf.scene, 1.3, 0.03); // 5単位の半径で0.1の速度
+                })
+                .start();
+        }
+    });
+// マーカーが見つかったときのハンドラー関数
+    const onMarkerFound = () => {
+        console.log("Marker Found!");
+    };
+
+// マーカーが見失われたときのハンドラー関数
+    const onMarkerLost = () => {
+        console.log("Marker Lost!");
+    };
+
+// イベントリスナーを追加
+    arToolkitContext.addEventListener('markerFound', onMarkerFound);
+    arToolkitContext.addEventListener('markerLost', onMarkerLost);
+
+    function animate() {
+        requestAnimationFrame(animate);
+        TWEEN.update();
+        const delta = clock.getDelta();
+        if (mixer) mixer.update(delta);
         if (arToolkitSource.ready) {
-            arToolkitContext.update(arToolkitSource.domElement); // ARコンテキストの更新
-            renderer.render(scene, camera); // シーンとカメラを使ってレンダリング
-            scene.visible = camera.visible; // シーンの可視状態をカメラの可視状態に同期
+            arToolkitContext.update(arToolkitSource.domElement);
+            renderer.render(scene, camera);
+            scene.visible = camera.visible;
         }
     }
 
-    animate(); // アニメーションの開始
+    animate();
 
-    // イベントリスナーの設定（マーカー発見時のイベント）
-    window.addEventListener("markerFound", (e) => {
-        console.log("marker found!", e); // マーカー発見時にコンソールにログを出力
-    });
-
-    // クリーンアップ関数の設定
     return () => {
-        // シーン内のすべてのオブジェクトを削除してクリーンアップ
+        renderer.dispose();
+        arDispose();
         scene.traverse((object) => {
             if (object instanceof THREE.Mesh) {
-                const mesh = object as THREE.Mesh;
-                if (mesh.geometry) {
-                    mesh.geometry.dispose();
-                }
-                if (mesh.material instanceof THREE.Material) {
-                    const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-                    materials.forEach(material => {
-                        if ((material as THREE.Material).map) {
-                            (material as THREE.Material).map.dispose();
-                        }
-                        material.dispose();
-                    });
+                object.geometry.dispose();
+                if (Array.isArray(object.material)) {
+                    object.material.forEach(material => material.dispose());
+                } else if (object.material) {
+                    (object.material as THREE.Material).dispose();
                 }
             }
         });
-
-
-        renderer.dispose(); // レンダラーのリソースを解放
-        // カメラのリソースがあれば解放
-        arDispose();
-
-        // レンダラーのDOM要素がまだドキュメントに存在するか確認してから削除
         if (renderer.domElement && document.body.contains(renderer.domElement)) {
             document.body.removeChild(renderer.domElement);
         }
-
-        window.removeEventListener("markerFound", () => {}); // イベントリスナーを削除
+        window.removeEventListener('markerFound', onMarkerFound);
+        window.removeEventListener('markerLost', onMarkerLost);
     };
-
 };

@@ -73,11 +73,24 @@ export const useARToolkit = ({
                 getSourceOrientation();
 
             window.arToolkitContext = arToolkitContext;
+            setupMarkerEvents();
         });
 
         scene.visible = false;
 
         window.arMarkerControls = arMarkerControls;
+    }
+
+    function setupMarkerEvents() {
+        document.addEventListener('markerFound', () => {
+            console.log('Marker found!');
+            scene.visible = true;
+        });
+
+        document.addEventListener('markerLost', () => {
+            console.log('Marker lost!');
+            scene.visible = false;
+        });
     }
 
     function getSourceOrientation(): string {

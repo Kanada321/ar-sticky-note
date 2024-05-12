@@ -1,107 +1,150 @@
 import * as THREE from "three";
 import cameraPara from "@/assets/camera_para.dat";
-import markerURL from "@/assets/marker.patt";
+import markerURL from "@/assets/pattern-AR.patt";
 import { useARToolkit } from "@/useARToolkit";
+import TWEEN from '@tweenjs/tween.js';
 
 export const initAR1 = () => {
-    // サイズを取得
     const width = window.innerWidth;
     const height = window.innerHeight;
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setClearColor(new THREE.Color("lightgrey"), 0);
+    renderer.setSize(width, height);
+    renderer.domElement.style.cssText = "position:absolute; top:0; left:0; z-index:10;";
+    document.body.appendChild(renderer.domElement);
 
-    // WebGLレンダラーの設定
-    const renderer = new THREE.WebGLRenderer({
-        antialias: true, // エッジの滑らか化を有効化
-        alpha: true, // キャンバスにアルファ（透明度）バッファを使用する
-    });
-    renderer.setClearColor(new THREE.Color("lightgrey"), 0); // 背景色と透明度の設定
-    renderer.setSize(width, height); // レンダラーのサイズ設定
-    renderer.domElement.style.position = "absolute"; // DOM上でのレンダラーの位置設定
-    renderer.domElement.style.top = "0px"; // 上端からの位置
-    renderer.domElement.style.left = "0px"; // 左端からの位置
-    renderer.domElement.style.zIndex = '10';
-    document.body.appendChild(renderer.domElement); // DOMにレンダラーを追加
-
-    // シーンの設定
     const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(60, width / height, 0.01, 20);
+    camera.position.set(1, 1.5, 1.5);
+    camera.lookAt(new THREE.Vector3(0, 0.5, 0));
+    scene.add(camera);
 
-    // カメラの設定
-    const camera = new THREE.PerspectiveCamera(60, width / height, 0.01, 20); // 透視投影カメラの設定
-    camera.position.set(1, 1.5, 1.5); // カメラの位置設定
-    camera.lookAt(new THREE.Vector3(0, 0.5, 0)); // カメラの注視点設定
-    scene.add(camera); // シーンにカメラを追加
+    setupLighting(scene);
 
-    // 照明の設定
-    const light = new THREE.DirectionalLight(0xffffff, 1); // 白色の指向性ライトを作成
-    light.position.set(2.4, 2, 5); // ライトの位置設定
-    scene.add(light); // シーンにライトを追加
+    let box = createBox();
+    scene.add(box);
+    const sphere = createSphere();
+    scene.add(sphere);
 
-    // メッシュ（3Dオブジェクト）の設定
-    const box = new THREE.Mesh(
-        new THREE.BoxGeometry(1, 1, 1), // 立方体ジオメトリの設定
-        new THREE.MeshStandardMaterial({ color: 0xe5e5e5 }) // 灰色のマテリアル設定
-    );
-    box.position.set(0, 0.5, 0); // メッシュの位置設定
-    scene.add(box); // シーンにメッシュを追加
-
-    // ARツールキットの設定
-    const { arToolkitContext, arToolkitSource ,arDispose} = useARToolkit({
-        camera: camera, // AR用カメラ
-        cameraParaDatURL: cameraPara, // カメラパラメータファイル
-        domElement: renderer.domElement, // DOM要素
-        markerPatternURL: markerURL, // マーカーURL
-        scene, // シーン
+    const { arToolkitContext, arToolkitSource, arDispose } = useARToolkit({
+        camera,
+        cameraParaDatURL: cameraPara,
+        domElement: renderer.domElement,
+        markerPatternURL: markerURL,
+        scene,
     });
 
-    // アニメーションループの設定
-    function animate() {
-        requestAnimationFrame(animate); // 次のフレームを要求
+    let currentSpherePosition = new THREE.Vector3();
+    let angle = 0;
+    let orbitRadius = 0.5;  // Initial orbit radius
 
+    function animate() {
+        requestAnimationFrame(animate);
+        TWEEN.update();
         if (arToolkitSource.ready) {
-            arToolkitContext.update(arToolkitSource.domElement); // ARコンテキストの更新
-            renderer.render(scene, camera); // シーンとカメラを使ってレンダリング
-            scene.visible = camera.visible; // シーンの可視状態をカメラの可視状態に同期
+            arToolkitContext.update(arToolkitSource.domElement);
+            updateSphereOrbit(sphere, new THREE.Vector3(0, 0.5, 0), orbitRadius);
+            box.rotation.y += 0.05;  // Rotate the box
+            renderer.render(scene, camera);
+            scene.visible = camera.visible;
         }
     }
+    animate();
 
-    animate(); // アニメーションの開始
-
-    // イベントリスナーの設定（マーカー発見時のイベント）
-    window.addEventListener("markerFound", (e) => {
-        console.log("marker found!", e); // マーカー発見時にコンソールにログを出力
+    window.addEventListener("markerFound", () => {
+        console.log("Marker found!");
+        resetBox();
     });
 
-    // クリーンアップ関数の設定
-    return () => {
-        // シーン内のすべてのオブジェクトを削除してクリーンアップ
-        scene.traverse((object) => {
-            if (object instanceof THREE.Mesh) {
-                const mesh = object as THREE.Mesh;
-                if (mesh.geometry) {
-                    mesh.geometry.dispose();
-                }
-                if (mesh.material instanceof THREE.Material) {
-                    const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-                    materials.forEach(material => {
-                        if ((material as THREE.Material).map) {
-                            (material as THREE.Material).map.dispose();
-                        }
-                        material.dispose();
-                    });
-                }
-            }
-        });
+    function resetBox() {
+        scene.add(box);
+        box.scale.set(0.7, 0.7, 0.7);  // Reset scale
+        box.material.opacity = 1;  // Make box visible
+        orbitRadius = 0.5;
+        setTimeout(() => growAndDisappearBox(), 3000);  // Grow and disappear after 3 seconds
+    }
 
+    function growAndDisappearBox() {
+        new TWEEN.Tween(box.scale)
+            .to({ x: 2, y: 2, z: 2 }, 1000)
+            .onUpdate(() => {
+                orbitRadius = 1.4;  // Adjust orbit radius as the box grows
+            })
+            .start();
 
-        renderer.dispose(); // レンダラーのリソースを解放
-        // カメラのリソースがあれば解放
-        arDispose();
+        new TWEEN.Tween(box.material)
+            .to({ opacity: 0 }, 1000)
+            .delay(1000)  // Start fading after growing
+            .onComplete(() => {
+                setTimeout(() => resetBox(), 500);  // Reappear after 0.5 seconds
+            })
+            .start();
+    }
 
-        // レンダラーのDOM要素がまだドキュメントに存在するか確認してから削除
-        if (renderer.domElement && document.body.contains(renderer.domElement)) {
-            document.body.removeChild(renderer.domElement);
-        }
-
-        window.removeEventListener("markerFound", () => {}); // イベントリスナーを削除
-    };
-
+    return () => cleanup(scene, renderer, arDispose);
 };
+
+function setupLighting(scene) {
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1);
+    scene.add(ambientLight);//環境光の設定
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5);
+    directionalLight.position.set(0, 1, 1); // 上からの光
+    scene.add(directionalLight);
+    const pointLight = new THREE.PointLight(0xffffff, 5, 100);
+    pointLight.position.set(10, 10, 10); // シーンの端から光を投げる
+    scene.add(pointLight);
+}
+
+function createBox() {
+    const geometry = new THREE.BoxGeometry(0.7, 0.7, 0.7);
+    const material = new THREE.MeshStandardMaterial({
+        color: 0xa59595,
+        transparent: true,
+        opacity: 1,
+    });
+    return new THREE.Mesh(geometry, material);
+}
+
+function createSphere() {
+    const geometry = new THREE.SphereGeometry(0.15, 32, 32);
+    const material = new THREE.MeshStandardMaterial({ color: 0xFF5733, transparent: true, opacity: 0.7 });
+    return new THREE.Mesh(geometry, material);
+}
+
+let angle = 0;  // 公転の初期角度
+function updateSphereOrbit(sphere, centerPosition, radius) {
+    angle += 0.1;
+    const newPosition = new THREE.Vector3(
+        centerPosition.x + radius * Math.cos(angle),
+        centerPosition.y,
+        centerPosition.z + radius * Math.sin(angle)
+    );
+    smoothSpherePosition(sphere, newPosition);
+}
+
+let currentSpherePosition = new THREE.Vector3();
+const sphereSmoothingFactor = 0.1;  // 平滑化のための定数
+
+function smoothSpherePosition(sphere, newPosition) {
+    currentSpherePosition.lerp(newPosition, sphereSmoothingFactor);
+    sphere.position.copy(currentSpherePosition);
+}
+
+function cleanup(scene, renderer, arDispose) {
+    scene.traverse(object => {
+        if (object instanceof THREE.Mesh) {
+            object.geometry.dispose();
+            if (Array.isArray(object.material)) {
+                object.material.forEach(material => material.dispose());
+            } else {
+                object.material.dispose();
+            }
+        }
+    });
+    renderer.dispose();
+    arDispose();
+    if (document.body.contains(renderer.domElement)) {
+        document.body.removeChild(renderer.domElement);
+    }
+    window.removeEventListener("markerFound", () => resetBox());
+}
